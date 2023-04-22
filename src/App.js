@@ -1,37 +1,34 @@
-import React, {useState, useMemo} from "react";
+import React, {useState, useEffect} from "react";
 import './styles/App.css'
 import PostList from "./components/PostList";
-import MyButton from "./components/UI/BUTTON/MyButton"
-import MyInput from "./components/UI/Input/MyInput"
+import MyButton from "./components/UI/Button/MyButton"
 import PostForm from "./components/PostForm";
-import MySelect from "./components/UI/select/MySelect";
 import PostFilter from "./components/PostFilter";
 import MyModal from "./components/UI/MyModal/MyModal";
-function App() {
-  const [posts, setPosts] = useState([
-      {id: 1, title: 'JavaScript 0', body: 'Description'},
-      {id: 2, title: 'JavaScript 1', body: 'Description'},
-      {id: 3, title: 'JavaScript 2', body: 'Description'},
-  ])
+import { usePosts } from "./hooks/usePosts";
+import PostService from "./API/PostService";
+import Loader from "./components/UI/Loader/Loader";
+import { useFetching } from "./hooks/useFetching";
 
+
+function App() {
+  const [posts, setPosts] = useState([])
   const [filter, setFilter] = useState({sort: '', query: ''});
   const [modal, setModal] = useState(false);
+  const sortedAndSearchedPosts = usePosts(posts, filter.sort, filter.query)
 
-  const sortedPosts = useMemo(() => {
-    console.log("sorted start");
-    if(filter.sort) {
-      return [...posts].sort((a, b) => a[filter.sort].localeCompare(b[filter.sort]))
-    }
-    return posts;
-  }, [filter.sort, posts])
+  const [fetchPosts, isPostLoading, postError] = useFetching(async () => {
+    const posts = await PostService.getAll();
+    setPosts(posts);
+  })
 
-  const sortedAndSearchedPosts = useMemo(() => {
-    return sortedPosts.filter(post => post.title.toLowerCase().includes(filter.query.toLowerCase()))
-  }, [filter.query, sortedPosts])
+  useEffect(() => {
+    fetchPosts()
+  }, [])
 
   const createPost = (newPost) => {
-    setPosts([...posts, newPost])
-    setModal(false)
+    setPosts([...posts, newPost]);
+    setModal(false);
   }
 
   const removePost = (post) => {
@@ -40,6 +37,7 @@ function App() {
 
   return (
     <div className="App">
+      <MyButton style={{margin: '30px 30px 0 0'}}onClick={fetchPosts}>Загрузить посты</MyButton>
       <MyButton style={{marginTop: '30px'}} onClick={() => setModal(true)}>
         Создать пост
       </MyButton>
@@ -55,10 +53,14 @@ function App() {
         filter={filter}
         setFilter={setFilter}
       />
-      <PostList remove={removePost} posts={sortedAndSearchedPosts} title="Список постов про JS"/>
-
+      {postError &&
+        <h1>Произошла ошибка {postError}</h1>
+      }
+      {isPostLoading
+        ? <div style={{display: 'flex', justifyContent: 'center', marginTop: '50px'}}><Loader/></div>
+        : <PostList remove={removePost} posts={sortedAndSearchedPosts} title="Список постов про JS"/>
+      }
       
-
     </div>
   );
 }
