@@ -91,7 +91,7 @@ function Posts() {
       }
 
       <PostList remove={removePost} posts={sortedAndSearchedPosts} title="Список постов про JS"/>
-      <div ref={lastElement} style={{height: 20, background: 'red'}}></div>
+      <div ref={lastElement} style={{height: 20, background: 'transperent'}}></div>
 
       {isPostLoading && 
         <div style={{display: 'flex', justifyContent: 'center', marginTop: '50px'}}><Loader/></div>
